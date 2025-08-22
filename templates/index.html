@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfect Guess Game - By Umar J</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .branding {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            opacity: 0.8;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .branding strong {
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .game-area {
+            margin: 30px 0;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-new-game {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+
+        .message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.success {
+            background: rgba(76, 175, 80, 0.3);
+            border: 2px solid #4caf50;
+        }
+
+        .message.hint {
+            background: rgba(255, 193, 7, 0.3);
+            border: 2px solid #ffc107;
+        }
+
+        .message.error {
+            background: rgba(244, 67, 54, 0.3);
+            border: 2px solid #f44336;
+        }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .btn {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="branding">Created by <strong>Umar J</strong></div>
+        <h1>🎯 Perfect Guess Game</h1>
+        <p class="subtitle">I'm thinking of a number between 1 and 100</p>
+        
+        <div class="game-area">
+            <input type="number" id="guessInput" placeholder="Enter your guess..." min="1" max="100" disabled>
+            <br>
+            <button class="btn" id="guessBtn" onclick="makeGuess()" disabled>Make Guess</button>
+            <button class="btn btn-new-game" onclick="startNewGame()">New Game</button>
+        </div>
+        
+        <div class="message" id="messageArea">
+            Click "New Game" to start playing!
+        </div>
+        
+        <div class="stats" id="statsArea"></div>
+    </div>
+
+    <script>
+        let gameActive = false;
+
+        async function startNewGame() {
+            try {
+                const response = await fetch('/new_game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    gameActive = true;
+                    document.getElementById('guessInput').disabled = false;
+                    document.getElementById('guessBtn').disabled = false;
+                    document.getElementById('guessInput').focus();
+                    
+                    showMessage(data.message, 'success');
+                    updateStats('');
+                    
+                    // Clear input
+                    document.getElementById('guessInput').value = '';
+                }
+            } catch (error) {
+                showMessage('Error starting new game. Please try again.', 'error');
+            }
+        }
+
+        async function makeGuess() {
+            const guessInput = document.getElementById('guessInput');
+            const guess = parseInt(guessInput.value);
+            
+            if (isNaN(guess) || guess < 1 || guess > 100) {
+                showMessage('Please enter a valid number between 1 and 100.', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/guess', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ guess: guess })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    gameActive = false;
+                    document.getElementById('guessInput').disabled = true;
+                    document.getElementById('guessBtn').disabled = true;
+                    
+                    // Add celebration animation
+                    document.querySelector('.game-container').classList.add('pulse');
+                    setTimeout(() => {
+                        document.querySelector('.game-container').classList.remove('pulse');
+                    }, 500);
+                    
+                } else if (data.status === 'hint') {
+                    showMessage(data.message, 'hint');
+                } else {
+                    showMessage(data.message, 'error');
+                }
+                
+                if (data.guesses) {
+                    updateStats(`Attempts: ${data.guesses}`);
+                }
+                
+                // Clear input for next guess
+                guessInput.value = '';
+                guessInput.focus();
+                
+            } catch (error) {
+                showMessage('Error making guess. Please try again.', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.textContent = message;
+            messageArea.className = `message ${type}`;
+        }
+
+        function updateStats(stats) {
+            document.getElementById('statsArea').textContent = stats;
+        }
+
+        // Allow Enter key to make guess
+        document.getElementById('guessInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && gameActive) {
+                makeGuess();
+            }
+        });
+
+        // Load game status on page load
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('/game_status');
+                const data = await response.json();
+                
+                if (data.has_game && !data.game_over) {
+                    gameActive = true;
+                    document.getElementById('guessInput').disabled = false;
+                    document.getElementById('guessBtn').disabled = false;
+                    showMessage('Game in progress. Continue guessing!', 'hint');
+                    if (data.guesses > 0) {
+                        updateStats(`Attempts: ${data.guesses}`);
+                    }
+                }
+            } catch (error) {
+                console.log('No active game session');
+            }
+        });
+    </script>
+</body>
+</html>
